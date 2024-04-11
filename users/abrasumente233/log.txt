@@ -1,0 +1,2213 @@
+USER: abrasumente233
+MODEL: anthropic/claude-3-sonnet:beta
+PROMPT:
+# Problem Description
+
+Below is a system with 4 tokens: H, J, K and L.
+
+An program within this system is a sequence of tokens. Example:
+
+L L K J J H H L L K K J
+
+To compute a program, we must rewrite token pairs, using the following *four* rules:
+
+- «HJ» -> nothing
+- «HL» -> «LH»
+- «KJ» -> «JK»
+- «KL» -> nothing
+
+Below is a list of ALL possible comparsions:
+
+- «HJ» == «HH»? No
+- «HL» == «HH»? No
+- «KJ» == «HH»? No
+- «KL» == «HH»? No
+- «HJ» == «HJ»? Yes
+- «HL» == «HJ»? No
+- «KJ» == «HJ»? No
+- «KL» == «HJ»? No
+- «HJ» == «HK»? No
+- «HL» == «HK»? No
+- «KJ» == «HK»? No
+- «KL» == «HK»? No
+- «HJ» == «HL»? No
+- «HL» == «HL»? Yes
+- «KJ» == «HL»? No
+- «KL» == «HL»? No
+- «HJ» == «JH»? No
+- «HL» == «JH»? No
+- «KJ» == «JH»? No
+- «KL» == «JH»? No
+- «HJ» == «JJ»? No
+- «HL» == «JJ»? No
+- «KJ» == «JJ»? No
+- «KL» == «JJ»? No
+- «HJ» == «JK»? No
+- «HL» == «JK»? No
+- «KJ» == «JK»? No
+- «KL» == «JK»? No
+- «HJ» == «JL»? No
+- «HL» == «JL»? No
+- «KJ» == «JL»? No
+- «KL» == «JL»? No
+- «HJ» == «KH»? No
+- «HL» == «KH»? No
+- «KJ» == «KH»? No
+- «KL» == «KH»? No
+- «HJ» == «KJ»? No
+- «HL» == «KJ»? No
+- «KJ» == «KJ»? Yes
+- «KL» == «KJ»? No
+- «HJ» == «KK»? No
+- «HL» == «KK»? No
+- «KJ» == «KK»? No
+- «KL» == «KK»? No
+- «HJ» == «KL»? No
+- «HL» == «KL»? No
+- «KJ» == «KL»? No
+- «KL» == «KL»? Yes
+- «HJ» == «LH»? No
+- «HL» == «LH»? No
+- «KJ» == «LH»? No
+- «KL» == «LH»? No
+- «HJ» == «LJ»? No
+- «HL» == «LJ»? No
+- «KJ» == «LJ»? No
+- «KL» == «LJ»? No
+- «HJ» == «LK»? No
+- «HL» == «LK»? No
+- «KJ» == «LK»? No
+- «KL» == «LK»? No
+- «HJ» == «LL»? No
+- «HL» == «LL»? No
+- «KJ» == «LL»? No
+- «KL» == «LL»? No
+
+# Input and Output Format
+
+The input program is given in a different format with the following mapping:
+
+- A# -> H
+- #A -> J
+- B# -> K
+- #B -> L
+
+The input program is enclosed in a XML tag: <problem>...</problem>. You will need to first convert the input program to the internal format shown above. In the end, convert the internal format back to the original format. Finally, put the answer in the *original format* in a XML tag: <solution>...</solution>. The <solution> tag should reside within a single new line alone.
+
+# Algorithm Description
+
+The program must be rewritten according to the corresponding rule. Below are the procedures for computing a program:
+
+P1. Translating to the internal format, step by step
+P2. Compute the program
+P3. Translating from the internal format to original format, step by step
+    P3.1. As a reminder, list the translation rules from internal to original
+    P3.2. Translate the program back to the original format
+
+# Example 1 (with reasoning)
+
+Initial program in the original format: #B #B B# #A #A A# A# #B #B B# B# #A
+P1. Translating to the internal format, step by step:
+  - #B -> L
+  - #B -> L
+  - B# -> K
+  - #A -> J
+  - #A -> J
+  - A# -> H
+  - A# -> H
+  - #B -> L
+  - #B -> L
+  - B# -> K
+  - B# -> K
+  - #A -> J
+P2: Compute the program
+Initial program in the internal format: [0:L, 1:L, 2:K, 3:J, 4:J, 5:H, 6:H, 7:L, 8:L, 9:K, 10:K, 11:J]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:L, 1:L, 2:J, 3:K, 4:J, 5:H, 6:H, 7:L, 8:L, 9:K, 10:K, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=11 Reached end of the step = (i >= max_i) = (3 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:L, 1:L, 2:J, 3:J, 4:K, 5:H, 6:H, 7:L, 8:L, 9:K, 10:K, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=11 Reached end of the step = (i >= max_i) = (4 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:L, 1:L, 2:J, 3:J, 4:K, 5:H, 6:L, 7:H, 8:L, 9:K, 10:K, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=11 Reached end of the step = (i >= max_i) = (7 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «7:H, 8:L» to «7:L, 8:H». Old index = old_i = 7
+    After rewrite: [0:L, 1:L, 2:J, 3:J, 4:K, 5:H, 6:L, 7:L, 8:H, 9:K, 10:K, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=11 Reached end of the step = (i >= max_i) = (8 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:H, 9:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (9, 10): «9:K, 10:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (10, 11): «10:K, 11:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «10:K, 11:J» to «10:J, 11:K». Old index = old_i = 10
+    After rewrite: [0:L, 1:L, 2:J, 3:J, 4:K, 5:H, 6:L, 7:L, 8:H, 9:K, 10:J, 11:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=10+1=11. max_i:=11 Reached end of the step = (i >= max_i) = (11 >= 11) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 1: [0:L, 1:L, 2:J, 3:J, 4:K, 5:H, 6:L, 7:L, 8:H, 9:K, 10:J, 11:K]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (2, 3): «2:J, 3:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (3, 4): «3:J, 4:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:L, 1:L, 2:J, 3:J, 4:K, 5:L, 6:H, 7:L, 8:H, 9:K, 10:J, 11:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=11 Reached end of the step = (i >= max_i) = (6 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:L, 1:L, 2:J, 3:J, 4:K, 5:L, 6:L, 7:H, 8:H, 9:K, 10:J, 11:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=11 Reached end of the step = (i >= max_i) = (7 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (9, 10): «9:K, 10:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «9:K, 10:J» to «9:J, 10:K». Old index = old_i = 9
+    After rewrite: [0:L, 1:L, 2:J, 3:J, 4:K, 5:L, 6:L, 7:H, 8:H, 9:J, 10:K, 11:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=9+1=10. max_i:=11 Reached end of the step = (i >= max_i) = (10 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (10, 11): «10:K, 11:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:L, 1:L, 2:J, 3:J, 4:K, 5:L, 6:L, 7:H, 8:H, 9:J, 10:K, 11:K]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (2, 3): «2:J, 3:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (3, 4): «3:J, 4:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «4:K, 5:L». Old index = old_i = 4 
+    Before removing: [0:L, 1:L, 2:J, 3:J, 4:K, 5:L, 6:L, 7:H, 8:H, 9:J, 10:K, 11:K]
+    Labelling the TWO elements «4:K, 5:L» to be removed: [0:L, 1:L, 2:J, 3:J, 4:removed, 5:removed, 6:L, 7:H, 8:H, 9:J, 10:K, 11:K]
+    After removing the labelled TWO elements «4:K, 5:L» to be removed, without renumbering: [0:L, 1:L, 2:J, 3:J, 6:L, 7:H, 8:H, 9:J, 10:K, 11:K]
+    Renumbering: [0:L, 1:L, 2:J, 3:J, 4:L, 5:H, 6:H, 7:J, 8:K, 9:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=4+0=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:L, 5:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «6:H, 7:J». Old index = old_i = 6 
+    Before removing: [0:L, 1:L, 2:J, 3:J, 4:L, 5:H, 6:H, 7:J, 8:K, 9:K]
+    Labelling the TWO elements «6:H, 7:J» to be removed: [0:L, 1:L, 2:J, 3:J, 4:L, 5:H, 6:removed, 7:removed, 8:K, 9:K]
+    After removing the labelled TWO elements «6:H, 7:J» to be removed, without renumbering: [0:L, 1:L, 2:J, 3:J, 4:L, 5:H, 8:K, 9:K]
+    Renumbering: [0:L, 1:L, 2:J, 3:J, 4:L, 5:H, 6:K, 7:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=6+0=6. max_i:=7 Reached end of the step = (i >= max_i) = (6 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:L, 1:L, 2:J, 3:J, 4:L, 5:H, 6:K, 7:K]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (2, 3): «2:J, 3:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (3, 4): «3:J, 4:L». Checking whether «JL» is among the four rules: «HJ» == «JL»? No. «HL» == «JL»? No. «KJ» == «JL»? No. «KL» == «JL»? No. Did not find a matching rule
+  pos (4, 5): «4:L, 5:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:L, 1:L, 2:J, 3:J, 4:L, 5:H, 6:K, 7:K]
+P3. Translating from the internal format to original format, step by step:
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - L -> #B
+  - L -> #B
+  - J -> #A
+  - J -> #A
+  - L -> #B
+  - H -> A#
+  - K -> B#
+  - K -> B#
+Final result in the original format: #B #B #A #A #B A# B# B#
+
+
+<solution>#B #B #A #A #B A# B# B#</solution>
+
+# Guidelines
+
+- Keep rewriting, until no more rewrites can be done. DO NOT stop unless you are sure that no more rewrites can be done.
+- Strictly follow the same reasoning format as shown in the example. Pay extreme attention to the example, as it contains everything you need to know to solve the problem.
+
+Take a deep breath and start solving the problem. You will receive a $1000 tip if you solve it correctly.
+
+Consider the following program. Fully compute it, with reasoning, step by step.
+
+
+## Instance 0:
+Term: #B B# B# B# A# B# B# A# A# B# B# A# 
+Norm: #B B# B# B# A# B# B# A# A# B# B# A# 
+Rwts: 0
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>#B B# B# B# A# B# B# A# A# B# B# A#</problem>
+
+P1. Translating to the internal format, step by step:
+  - #B -> L
+  - B# -> K
+  - B# -> K 
+  - B# -> K
+  - A# -> H
+  - B# -> K
+  - B# -> K
+  - A# -> H
+  - A# -> H
+  - B# -> K
+  - B# -> K
+  - A# -> H
+
+P2: Compute the program
+Initial program in the internal format: [0:L, 1:K, 2:K, 3:K, 4:H, 5:K, 6:K, 7:H, 8:H, 9:K, 10:K, 11:H]
+
+Step 1: [0:L, 1:K, 2:K, 3:K, 4:H, 5:K, 6:K, 7:H, 8:H, 9:K, 10:K, 11:H]
+  pos (0, 1): «0:L, 1:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (9, 10): «9:K, 10:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (10, 11): «10:K, 11:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:L, 1:K, 2:K, 3:K, 4:H, 5:K, 6:K, 7:H, 8:H, 9:K, 10:K, 11:H]
+
+P3. Translating from the internal format to original format, step by step:
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - L -> #B
+  - K -> B#
+  - K -> B#
+  - K -> B#
+  - H -> A#
+  - K -> B#
+  - K -> B#
+  - H -> A#
+  - H -> A#
+  - K -> B#
+  - K -> B#
+  - H -> A#
+
+Final result in the original format: #B B# B# B# A# B# B# A# A# B# B# A#
+
+<solution>#B B# B# B# A# B# B# A# A# B# B# A#</solution>
+
+AI-Solution: #B B# B# B# A# B# B# A# A# B# B# A# 
+
+<<correct>>
+
+## Instance 1:
+Term: #A A# #A B# B# A# #A A# B# A# A# B# 
+Norm: #A B# B# A# B# A# A# B# 
+Rwts: 2
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>#A A# #A B# B# A# #A A# B# A# A# B#</problem>
+
+P1. Translating to the internal format, step by step:
+  - #A -> J
+  - A# -> H
+  - #A -> J
+  - B# -> K
+  - B# -> K
+  - A# -> H
+  - #A -> J
+  - A# -> H
+  - B# -> K
+  - A# -> H
+  - A# -> H
+  - B# -> K
+
+P2: Compute the program
+Initial program in the internal format: [0:J, 1:H, 2:J, 3:K, 4:K, 5:H, 6:J, 7:H, 8:K, 9:H, 10:H, 11:K]
+  pos (0, 1): «0:J, 1:H». Checking whether «JH» is among the four rules: «HJ» == «JH»? Yes. «HL» == «JH»? No. «KJ» == «JH»? No. «KL» == «JH»? No. Found a matching rule
+    Removing the pair «0:J, 1:H». Old index = old_i = 0
+    Before removing: [0:J, 1:H, 2:J, 3:K, 4:K, 5:H, 6:J, 7:H, 8:K, 9:H, 10:H, 11:K]
+    Labelling the TWO elements «0:J, 1:H» to be removed: [0:removed, 1:removed, 2:J, 3:K, 4:K, 5:H, 6:J, 7:H, 8:K, 9:H, 10:H, 11:K]
+    After removing the labelled TWO elements «0:J, 1:H» to be removed, without renumbering: [2:J, 3:K, 4:K, 5:H, 6:J, 7:H, 8:K, 9:H, 10:H, 11:K]
+    Renumbering: [0:J, 1:K, 2:K, 3:H, 4:J, 5:H, 6:K, 7:H, 8:H, 9:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=0+0=0. max_i:=9 Reached end of the step = (i >= max_i) = (0 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (0, 1): «0:J, 1:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «3:H, 4:J». Old index = old_i = 3
+    Before removing: [0:J, 1:K, 2:K, 3:H, 4:J, 5:H, 6:K, 7:H, 8:H, 9:K]
+    Labelling the TWO elements «3:H, 4:J» to be removed: [0:J, 1:K, 2:K, 3:removed, 4:removed, 5:H, 6:K, 7:H, 8:H, 9:K]
+    After removing the labelled TWO elements «3:H, 4:J» to be removed, without renumbering: [0:J, 1:K, 2:K, 5:H, 6:K, 7:H, 8:H, 9:K]
+    Renumbering: [0:J, 1:K, 2:K, 3:H, 4:K, 5:H, 6:H, 7:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=3+0=3. max_i:=7 Reached end of the step = (i >= max_i) = (3 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 1: [0:J, 1:K, 2:K, 3:H, 4:K, 5:H, 6:H, 7:K]
+  pos (0, 1): «0:J, 1:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:J, 1:K, 2:K, 3:H, 4:K, 5:H, 6:H, 7:K]
+P3. Translating from the internal format to original format, step by step:
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - J -> #A
+  - K -> B#
+  - K -> B#
+  - H -> A#
+  - K -> B#
+  - H -> A#
+  - H -> A#
+  - K -> B#
+Final result in the original format: #A B# B# A# B# A# A# B#
+
+<solution>#A B# B# A# B# A# A# B#</solution>
+
+AI-Solution: #A B# B# A# B# A# A# B# 
+
+<<correct>>
+
+## Instance 2:
+Term: A# A# A# B# #B B# A# #A #B B# #B A# 
+Norm: A# A# A# A# 
+Rwts: 4
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>A# A# A# B# #B B# A# #A #B B# #B A#</problem>
+
+P1. Translating to the internal format, step by step:
+  - A# -> H
+  - A# -> H
+  - A# -> H
+  - B# -> K
+  - #B -> L
+  - B# -> K
+  - A# -> H
+  - #A -> J
+  - #B -> L
+  - B# -> K
+  - #B -> L
+  - A# -> H
+
+P2: Compute the program
+Initial program in the internal format: [0:H, 1:H, 2:H, 3:K, 4:L, 5:K, 6:H, 7:J, 8:L, 9:K, 10:L, 11:H]
+
+Step 1: [0:H, 1:H, 2:H, 3:K, 4:L, 5:K, 6:H, 7:J, 8:L, 9:K, 10:L, 11:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «3:K, 4:L». Old index = old_i = 3
+    Before removing: [0:H, 1:H, 2:H, 3:K, 4:L, 5:K, 6:H, 7:J, 8:L, 9:K, 10:L, 11:H]
+    Labelling the TWO elements «3:K, 4:L» to be removed: [0:H, 1:H, 2:H, 3:removed, 4:removed, 5:K, 6:H, 7:J, 8:L, 9:K, 10:L, 11:H]
+    After removing the labelled TWO elements «3:K, 4:L» to be removed, without renumbering: [0:H, 1:H, 2:H, 5:K, 6:H, 7:J, 8:L, 9:K, 10:L, 11:H]
+    Renumbering: [0:H, 1:H, 2:H, 3:K, 4:H, 5:J, 6:L, 7:K, 8:L, 9:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=3+0=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «4:H, 5:J». Old index = old_i = 4
+    Before removing: [0:H, 1:H, 2:H, 3:K, 4:H, 5:J, 6:L, 7:K, 8:L, 9:H]
+    Labelling the TWO elements «4:H, 5:J» to be removed: [0:H, 1:H, 2:H, 3:K, 4:removed, 5:removed, 6:L, 7:K, 8:L, 9:H]
+    After removing the labelled TWO elements «4:H, 5:J» to be removed, without renumbering: [0:H, 1:H, 2:H, 3:K, 6:L, 7:K, 8:L, 9:H]
+    Renumbering: [0:H, 1:H, 2:H, 3:K, 4:L, 5:K, 6:L, 7:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=4+0=4. max_i:=7 Reached end of the step = (i >= max_i) = (4 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:L, 5:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «5:K, 6:L». Old index = old_i = 5
+    Before removing: [0:H, 1:H, 2:H, 3:K, 4:L, 5:K, 6:L, 7:H]
+    Labelling the TWO elements «5:K, 6:L» to be removed: [0:H, 1:H, 2:H, 3:K, 4:L, 5:removed, 6:removed, 7:H]
+    After removing the labelled TWO elements «5:K, 6:L» to be removed, without renumbering: [0:H, 1:H, 2:H, 3:K, 4:L, 7:H]
+    Renumbering: [0:H, 1:H, 2:H, 3:K, 4:L, 5:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=5+0=5. max_i:=5 Reached end of the step = (i >= max_i) = (5 >= 5) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+
+Step 2: [0:H, 1:H, 2:H, 3:K, 4:L, 5:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «3:K, 4:L». Old index = old_i = 3
+    Before removing: [0:H, 1:H, 2:H, 3:K, 4:L, 5:H]
+    Labelling the TWO elements «3:K, 4:L» to be removed: [0:H, 1:H, 2:H, 3:removed, 4:removed, 5:H]
+    After removing the labelled TWO elements «3:K, 4:L» to be removed, without renumbering: [0:H, 1:H, 2:H, 5:H]
+    Renumbering: [0:H, 1:H, 2:H, 3:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=3+0=3. max_i:=3 Reached end of the step = (i >= max_i) = (3 >= 3) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+
+Step 3: [0:H, 1:H, 2:H, 3:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+
+In this step, we did not perform any rewrite or removal, thus stopping
+
+Final result in the internal format: [0:H, 1:H, 2:H, 3:H]
+
+P3. Translating from the internal format to original format, step by step:
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - H -> A#
+  - H -> A#
+  - H -> A#
+  - H -> A#
+
+Final result in the original format: A# A# A# A#
+
+<solution>A# A# A# A#</solution>
+
+AI-Solution: A# A# A# A# 
+
+<<correct>>
+
+## Instance 3:
+Term: #B B# B# #A #B B# B# #B B# #B #B A# 
+Norm: #B #A B# A# 
+Rwts: 6
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>#B B# B# #A #B B# B# #B B# #B #B A#</problem>
+
+P1. Translating to the internal format, step by step:
+  - #B -> L
+  - B# -> K
+  - B# -> K
+  - #A -> J
+  - #B -> L
+  - B# -> K
+  - B# -> K
+  - #B -> L
+  - B# -> K
+  - #B -> L
+  - #B -> L
+  - A# -> H
+
+P2: Compute the program
+Initial program in the internal format: [0:L, 1:K, 2:K, 3:J, 4:L, 5:K, 6:K, 7:L, 8:K, 9:L, 10:L, 11:H]
+Step 1: [0:L, 1:K, 2:K, 3:J, 4:L, 5:K, 6:K, 7:L, 8:K, 9:L, 10:L, 11:H]
+  pos (0, 1): «0:L, 1:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:L, 1:K, 2:J, 3:K, 4:L, 5:K, 6:K, 7:L, 8:K, 9:L, 10:L, 11:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=11 Reached end of the step = (i >= max_i) = (3 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «3:K, 4:L». Old index = old_i = 3 
+    Before removing: [0:L, 1:K, 2:J, 3:K, 4:L, 5:K, 6:K, 7:L, 8:K, 9:L, 10:L, 11:H]
+    Labelling the TWO elements «3:K, 4:L» to be removed: [0:L, 1:K, 2:J, 3:removed, 4:removed, 5:K, 6:K, 7:L, 8:K, 9:L, 10:L, 11:H]
+    After removing the labelled TWO elements «3:K, 4:L» to be removed, without renumbering: [0:L, 1:K, 2:J, 5:K, 6:K, 7:L, 8:K, 9:L, 10:L, 11:H]
+    Renumbering: [0:L, 1:K, 2:J, 3:K, 4:K, 5:L, 6:K, 7:L, 8:L, 9:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=3+0=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «4:K, 5:L». Old index = old_i = 4 
+    Before removing: [0:L, 1:K, 2:J, 3:K, 4:K, 5:L, 6:K, 7:L, 8:L, 9:H]
+    Labelling the TWO elements «4:K, 5:L» to be removed: [0:L, 1:K, 2:J, 3:K, 4:removed, 5:removed, 6:K, 7:L, 8:L, 9:H]
+    After removing the labelled TWO elements «4:K, 5:L» to be removed, without renumbering: [0:L, 1:K, 2:J, 3:K, 6:K, 7:L, 8:L, 9:H]
+    Renumbering: [0:L, 1:K, 2:J, 3:K, 4:K, 5:L, 6:L, 7:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=4+0=4. max_i:=7 Reached end of the step = (i >= max_i) = (4 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «4:K, 5:L». Old index = old_i = 4 
+    Before removing: [0:L, 1:K, 2:J, 3:K, 4:K, 5:L, 6:L, 7:H]
+    Labelling the TWO elements «4:K, 5:L» to be removed: [0:L, 1:K, 2:J, 3:K, 4:removed, 5:removed, 6:L, 7:H]
+    After removing the labelled TWO elements «4:K, 5:L» to be removed, without renumbering: [0:L, 1:K, 2:J, 3:K, 6:L, 7:H]
+    Renumbering: [0:L, 1:K, 2:J, 3:K, 4:L, 5:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=4+0=4. max_i:=5 Reached end of the step = (i >= max_i) = (4 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:L, 5:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:L, 1:K, 2:J, 3:K, 4:L, 5:H]
+  pos (0, 1): «0:L, 1:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «1:K, 2:J» to «1:J, 2:K». Old index = old_i = 1
+    After rewrite: [0:L, 1:J, 2:K, 3:K, 4:L, 5:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=5 Reached end of the step = (i >= max_i) = (2 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:K, 3:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «3:K, 4:L». Old index = old_i = 3 
+    Before removing: [0:L, 1:J, 2:K, 3:K, 4:L, 5:H]
+    Labelling the TWO elements «3:K, 4:L» to be removed: [0:L, 1:J, 2:K, 3:removed, 4:removed, 5:H]
+    After removing the labelled TWO elements «3:K, 4:L» to be removed, without renumbering: [0:L, 1:J, 2:K, 5:H]
+    Renumbering: [0:L, 1:J, 2:K, 3:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=3+0=3. max_i:=3 Reached end of the step = (i >= max_i) = (3 >= 3) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:L, 1:J, 2:K, 3:H]
+  pos (0, 1): «0:L, 1:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (1, 2): «1:J, 2:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:L, 1:J, 2:K, 3:H]
+P3. Translating from the internal format to original format, step by step:
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - L -> #B
+  - J -> #A
+  - K -> B#
+  - H -> A#
+Final result in the original format: #B #A B# A#
+
+<solution>#B #A B# A#</solution>
+
+AI-Solution: #B #A B# A# 
+
+<<correct>>
+
+## Instance 4:
+Term: #B A# B# A# #B A# A# A# A# #B B# A# 
+Norm: #B #B A# A# A# A# A# A# B# A# 
+Rwts: 8
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>#B A# B# A# #B A# A# A# A# #B B# A#</problem>
+
+P1. Translating to the internal format, step by step:
+  - #B -> L
+  - A# -> H
+  - B# -> K
+  - A# -> H
+  - #B -> L
+  - A# -> H
+  - A# -> H
+  - A# -> H
+  - A# -> H
+  - #B -> L
+  - B# -> K
+  - A# -> H
+
+P2: Compute the program
+Initial program in the internal format: [0:L, 1:H, 2:K, 3:H, 4:L, 5:H, 6:H, 7:H, 8:H, 9:L, 10:K, 11:H]
+  pos (0, 1): «0:L, 1:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «0:L, 1:H» to «0:H, 1:L». Old index = old_i = 0
+    After rewrite: [0:H, 1:L, 2:K, 3:H, 4:L, 5:H, 6:H, 7:H, 8:H, 9:L, 10:K, 11:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=11 Reached end of the step = (i >= max_i) = (1 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:L, 2:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «3:H, 4:L» to «3:L, 4:H». Old index = old_i = 3
+    After rewrite: [0:H, 1:L, 2:K, 3:L, 4:H, 5:H, 6:H, 7:H, 8:H, 9:L, 10:K, 11:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=11 Reached end of the step = (i >= max_i) = (4 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «8:H, 9:L» to «8:L, 9:H». Old index = old_i = 8
+    After rewrite: [0:H, 1:L, 2:K, 3:L, 4:H, 5:H, 6:H, 7:H, 8:L, 9:H, 10:K, 11:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=8+1=9. max_i:=11 Reached end of the step = (i >= max_i) = (9 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (9, 10): «9:H, 10:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (10, 11): «10:K, 11:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 1: [0:H, 1:L, 2:K, 3:L, 4:H, 5:H, 6:H, 7:H, 8:L, 9:H, 10:K, 11:H]
+  pos (0, 1): «0:H, 1:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «0:H, 1:L» to «0:L, 1:H». Old index = old_i = 0
+    After rewrite: [0:L, 1:H, 2:K, 3:L, 4:H, 5:H, 6:H, 7:H, 8:L, 9:H, 10:K, 11:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=11 Reached end of the step = (i >= max_i) = (1 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:H, 2:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «2:K, 3:L». Old index = old_i = 2 
+    Before removing: [0:L, 1:H, 2:K, 3:L, 4:H, 5:H, 6:H, 7:H, 8:L, 9:H, 10:K, 11:H]
+    Labelling the TWO elements «2:K, 3:L» to be removed: [0:L, 1:H, 2:removed, 3:removed, 4:H, 5:H, 6:H, 7:H, 8:L, 9:H, 10:K, 11:H]
+    After removing the labelled TWO elements «2:K, 3:L» to be removed, without renumbering: [0:L, 1:H, 4:H, 5:H, 6:H, 7:H, 8:L, 9:H, 10:K, 11:H]
+    Renumbering: [0:L, 1:H, 2:H, 3:H, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=2+0=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:L, 1:H, 2:H, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:L, 1:H, 2:H, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]
+  pos (0, 1): «0:L, 1:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «0:L, 1:H» to «0:H, 1:L». Old index = old_i = 0
+    After rewrite: [0:H, 1:L, 2:H, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:L, 2:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «1:L, 2:H» to «1:H, 2:L». Old index = old_i = 1
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:L, 3:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «2:L, 3:H» to «2:H, 3:L». Old index = oldUnderstood, I will continue the computation and remember if a step was cut off in the middle or if a rewrite/removal was performed in the previous response.
+
+Continuing from the previous response:
+
+_i = 2
+    After rewrite: [0:H, 1:H, 2:H, 3:L, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:L, 4:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «3:L, 4:H» to «3:H, 4:L». Old index = old_i = 3
+    After rewrite: [0:H, 1:H, 2:H, 3:H, 4:L, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:L, 5:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (5, 6): «5:L, 6:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «5:L, 6:H» to «5:H, 6:L». Old index = old_i = 5
+    After rewrite: [0:H, 1:H, 2:H, 3:H, 4:L, 5:H, 6:L, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:L, 7:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «6:L, 7:H» to «6:H, 7:L». Old index = old_i = 6
+    After rewrite: [0:H, 1:H, 2:H, 3:H, 4:L, 5:H, 6:H, 7:L, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:L, 8:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:H, 1:H, 2:H, 3:H, 4:L, 5:H, 6:H, 7:L, 8:K, 9:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «3:H, 4:L» to «3:L, 4:H». Old index = old_i = 3
+    After rewrite: [0:H, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:L, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:H, 1:H, 2:H, 3:L, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 4: [0:H, 1:H, 2:H, 3:L, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «2:H, 3:L» to «2:L, 3:H». Old index = old_i = 2
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 5: [0:H, 1:H, 2:L, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «1:H, 2:L» to «1:L, 2:H». Old index = old_i = 1
+    After rewrite: [0:H, 1:L, 2:H, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (Got it, I will continue the computation and remember if a step was cut off in the middle or if a rewrite/removal was performed in the previous response.
+
+Continuing from the previous response:
+
+3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «4:H, 5:L» to «4:L, 5:H». Old index = old_i = 4
+    After rewrite: [0:H, 1:L, 2:H, 3:H, 4:L, 5:H, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 6: [0:H, 1:L, 2:H, 3:H, 4:L, 5:H, 6:H, 7:H, 8:K, 9:H]
+  pos (0, 1): «0:H, 1:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «0:H, 1:L» to «0:L, 1:H». Old index = old_i = 0
+    After rewrite: [0:L, 1:H, 2:H, 3:H, 4:L, 5:H, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «3:H, 4:L» to «3:L, 4:H». Old index = old_i = 3
+    After rewrite: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 7: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:H, 8:K, 9:H]
+  pos (0, 1): «0:L, 1:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «0:L, 1:H» to «0:H, 1:L». Old index = old_i = 0
+    After rewrite: [0:H, 1:L, 2:H, 3:L, 4:H, 5:H, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:L, 2:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «1:L, 2:H» to «1:H, 2:L». Old index = old_i = 1
+    After rewrite: [0:H, 1:H, 2:L, 3:L, 4:H, 5:H, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:L, 3:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (3, 4): «3:L, 4:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «3:L, 4:H» to «3:H, 4:L». Old index = old_i = 3
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:L, 5:H, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:L, 5:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «4:L, 5:H» to «4:H, 5:L». Old index = old_i = 4
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:L, 6:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «5:L, 6:H» to «5:H, 6:L». Old index = old_i = 5
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:L, 7:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «6:L, 7:H» to «6:H, 7:L». Old index = old_i = 6
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:H, 6:H, 7:L, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:L, 8:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 8: [0:H, 1:H, 2:L, 3:H, 4:H, 5:H, 6:H, 7:L, 8:K, 9:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «1:H, 2:L» to «1:L, 2:H». Old index = old_i = 1
+    After rewrite: [0:H, 1:L, 2:H, 3:H, 4:Got it, I will continue the computation and remember if a step was cut off in the middle or if a rewrite/removal was performed in the previous response.
+
+Continuing from the previous response:
+
+H, 5:H, 6:H, 7:L, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:H, 1:L, 2:H, 3:H, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 9: [0:H, 1:L, 2:H, 3:H, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]
+  pos (0, 1): «0:H, 1:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «0:H, 1:L» to «0:L, 1:H». Old index = old_i = 0
+    After rewrite: [0:L, 1:H, 2:H, 3:H, 4:H, 5:H, 6:L, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:L, 1:H, 2:H, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 10: [0:L, 1:H, 2:H, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]
+  pos (0, 1): «0:L, 1:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «0:L, 1:H» to «0:H, 1:L». Old index = old_i = 0
+    After rewrite: [0:H, 1:L, 2:H, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:L, 2:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «1:L, 2:H» to «1:H, 2:L». Old index = old_i = 1
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:L, 3:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «2:L, 3:H» to «2:H, 3:L». Old index = old_i = 2
+    After rewrite: [0:H, 1:H, 2:H, 3:L, 4:H, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:L, 4:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «3:L, 4:H» to «3:H, 4:L». Old index = old_i = 3
+    After rewrite: [0:H, 1:H, 2:H, 3:H, 4:L, 5:L, 6:H, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:L, 5:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (5, 6): «5:L, 6:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «5:L, 6:H» to «5:H, 6:L». Old index = old_i = 5
+    After rewrite: [0:H, 1:H, 2:H, 3:H, 4:L, 5:H, 6:L, 7:H, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:L, 7:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? Yes. «KJ» == «LH»? No. «KL» == «LH»? No. Found a matching rule
+    Rewrite the pair «6:L, 7:H» to «6:H, 7:L». Old index = old_i = 6
+    After rewrite: [0:H, 1:H, 2:H, 3:H, 4:L, 5:H, 6:H, 7:L, 8:K, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:L, 8:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 11: [0:H, 1:H, 2:H, 3:H, 4:L, 5:H, 6:H, 7:L, 8:K, 9:H]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «H<<not-found>>
+
+## Instance 5:
+Term: B# A# A# #B B# #B A# A# A# #B #A B# 
+Norm: #B A# A# A# A# B# 
+Rwts: 10
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>B# A# A# #B B# #B A# A# A# #B #A B#</problem>
+
+P1. Translating to the internal format, step by step:
+  - B# -> K
+  - A# -> H
+  - A# -> H
+  - #B -> L
+  - B# -> K
+  - #B -> L
+  - A# -> H
+  - A# -> H
+  - A# -> H
+  - #B -> L
+  - #A -> J
+  - B# -> K
+
+P2: Compute the program
+Initial program in the internal format: [0:K, 1:H, 2:H, 3:L, 4:K, 5:L, 6:H, 7:H, 8:H, 9:L, 10:J, 11:K]
+  pos (0, 1): «0:K, 1:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «2:H, 3:L» to «2:L, 3:H». Old index = old_i = 2
+    After rewrite: [0:K, 1:H, 2:L, 3:H, 4:K, 5:L, 6:H, 7:H, 8:H, 9:L, 10:J, 11:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=11 Reached end of the step = (i >= max_i) = (3 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «4:K, 5:L». Old index = old_i = 4 
+    Before removing: [0:K, 1:H, 2:L, 3:H, 4:K, 5:L, 6:H, 7:H, 8:H, 9:L, 10:J, 11:K]
+    Labelling the TWO elements «4:K, 5:L» to be removed: [0:K, 1:H, 2:L, 3:H, 4:removed, 5:removed, 6:H, 7:H, 8:H, 9:L, 10:J, 11:K]
+    After removing the labelled TWO elements «4:K, 5:L» to be removed, without renumbering: [0:K, 1:H, 2:L, 3:H, 6:H, 7:H, 8:H, 9:L, 10:J, 11:K]
+    Renumbering: [0:K, 1:H, 2:L, 3:H, 4:H, 5:H, 6:H, 7:L, 8:J, 9:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=4+0=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:K, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:H, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «7:H, 8:J». Old index = old_i = 7 
+    Before removing: [0:K, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:H, 8:J, 9:K]
+    Labelling the TWO elements «7:H, 8:J» to be removed: [0:K, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:removed, 8:removed, 9:K]
+    After removing the labelled TWO elements «7:H, 8:J» to be removed, without renumbering: [0:K, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 9:K]
+    Renumbering: [0:K, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=7+0=7. max_i:=7 Reached end of the step = (i >= max_i) = (7 >= 7) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 1: [0:K, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:K]
+  pos (0, 1): «0:K, 1:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «1:H, 2:L» to «1:L, 2:H». Old index = old_i = 1
+    After rewrite: [0:K, 1:L, 2:H, 3:H, 4:H, 5:H, 6:L, 7:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=7 Reached end of the step = (i >= max_i) = (2 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:K, 1:L, 2:H, 3:H, 4:H, 5:L, 6:H, 7:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=7 Reached end of the step = (i >= max_i) = (6 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:K, 1:L, 2:H, 3:H, 4:H, 5:L, 6:H, 7:K]
+  pos (0, 1): «0:K, 1:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «0:K, 1:L». Old index = old_i = 0 
+    Before removing: [0:K, 1:L, 2:H, 3:H, 4:H, 5:L, 6:H, 7:K]
+    Labelling the TWO elements «0:K, 1:L» to be removed: [0:removed, 1:removed, 2:H, 3:H, 4:H, 5:L, 6:H, 7:K]
+    After removing the labelled TWO elements «0:K, 1:L» to be removed, without renumbering: [2:H, 3:H, 4:H, 5:L, 6:H, 7:K]
+    Renumbering: [0:H, 1:H, 2:H, 3:L, 4:H, 5:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=0+0=0. max_i:=5 Reached end of the step = (i >= max_i) = (0 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «2:H, 3:L» to «2:L, 3:H». Old index = old_i = 2
+    After rewrite: [0:H, 1:H, 2:L, 3:H, 4:H, 5:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=5 Reached end of the step = (i >= max_i) = (3 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL»Got it, I will remember if a rewrite or removal was performed in the previous step. Continuing from where I left off:
+
+ == «HK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:H, 1:H, 2:L, 3:H, 4:H, 5:K]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «1:H, 2:L» to «1:L, 2:H». Old index = old_i = 1
+    After rewrite: [0:H, 1:L, 2:H, 3:H, 4:H, 5:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=5 Reached end of the step = (i >= max_i) = (2 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 4: [0:H, 1:L, 2:H, 3:H, 4:H, 5:K]
+  pos (0, 1): «0:H, 1:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «0:H, 1:L» to «0:L, 1:H». Old index = old_i = 0
+    After rewrite: [0:L, 1:H, 2:H, 3:H, 4:H, 5:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=5 Reached end of the step = (i >= max_i) = (1 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:L, 1:H, 2:H, 3:H, 4:H, 5:K]
+
+P3. Translating from the internal format to original format, step by step:  
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A  
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - L -> #B
+  - H -> A#
+  - H -> A#  
+  - H -> A#
+  - H -> A#
+  - K -> B#
+Final result in the original format: #B A# A# A# A# B#
+
+<solution>#B A# A# A# A# B#</solution>
+
+AI-Solution: #B A# A# A# A# B# 
+
+<<correct>>
+
+## Instance 6:
+Term: #B B# B# #A B# #B B# #A B# #A A# #B 
+Norm: #B #A #A #A B# B# B# A# 
+Rwts: 12
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>#B B# B# #A B# #B B# #A B# #A A# #B </problem>
+
+P1. Translating to the internal format, step by step:
+  - #B -> L
+  - B# -> K
+  - B# -> K
+  - #A -> J
+  - B# -> K
+  - #B -> L
+  - B# -> K
+  - #A -> J
+  - B# -> K
+  - #A -> J
+  - A# -> H
+  - #B -> L
+
+P2: Compute the program
+Initial program in the internal format: [0:L, 1:K, 2:K, 3:J, 4:K, 5:L, 6:K, 7:J, 8:K, 9:J, 10:H, 11:L]
+Step 1: [0:L, 1:K, 2:K, 3:J, 4:K, 5:L, 6:K, 7:J, 8:K, 9:J, 10:H, 11:L]
+  pos (0, 1): «0:L, 1:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:L, 1:K, 2:J, 3:K, 4:K, 5:L, 6:K, 7:J, 8:K, 9:J, 10:H, 11:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=11 Reached end of the step = (i >= max_i) = (3 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «4:K, 5:L». Old index = old_i = 4 
+    Before removing: [0:L, 1:K, 2:J, 3:K, 4:K, 5:L, 6:K, 7:J, 8:K, 9:J, 10:H, 11:L]
+    Labelling the TWO elements «4:K, 5:L» to be removed: [0:L, 1:K, 2:J, 3:K, 4:removed, 5:removed, 6:K, 7:J, 8:K, 9:J, 10:H, 11:L]
+    After removing the labelled TWO elements «4:K, 5:L» to be removed, without renumbering: [0:L, 1:K, 2:J, 3:K, 6:K, 7:J, 8:K, 9:J, 10:H, 11:L]
+    Renumbering: [0:L, 1:K, 2:J, 3:K, 4:K, 5:J, 6:K, 7:J, 8:H, 9:L]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=4+0=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:L, 1:K, 2:J, 3:K, 4:J, 5:K, 6:K, 7:J, 8:H, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «6:K, 7:J» to «6:J, 7:K». Old index = old_i = 6
+    After rewrite: [0:L, 1:K, 2:J, 3:K, 4:J, 5:K, 6:J, 7:K, 8:H, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:K, 8:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «8:H, 9:L» to «8:L, 9:H». Old index = old_i = 8
+    After rewrite: [0:L, 1:K, 2:J, 3:K, 4:J, 5:K, 6:J, 7:K, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=8+1=9. max_i:=9 Reached end of the step = (i >= max_i) = (9 >= 9) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:L, 1:K, 2:J, 3:K, 4:J, 5:K, 6:J, 7:K, 8:L, 9:H]
+  pos (0, 1): «0:L, 1:K». Checking whether «LK» is among the four rules: «HJ» == «LK»? No. «HL» == «LK»? No. «KJ» == «LK»? No. «KL» == «LK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «1:K, 2:J» to «1:J, 2:K». Old index = old_i = 1
+    After rewrite: [0:L, 1:J, 2:K, 3:K, 4:J, 5:K, 6:J, 7:K, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:K, 3:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:L, 1:J, 2:K, 3:J, 4:K, 5:K, 6:J, 7:K, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:L, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 7:K, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (7, 8): «7:K, 8:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «7:K, 8:L». Old index = old_i = 7 
+    Before removing: [0:L, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 7:K, 8:L, 9:H]
+    Labelling the TWO elements «7:K, 8:L» to be removed: [0:L, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 7:removed, 8:removed, 9:H]
+    After removing the labelled TWO elements «7:K, 8:L» to be removed, without renumbering: [0:L, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 9:H]
+    Renumbering: [0:L, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 7:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=7+0=7. max_i:=7 Reached end of the step = (i >= max_i) = (7 >= 7) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:L, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 7:H]
+  pos (0, 1): «0:L, 1:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (1, 2): «1:J, 2:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (2, 3): «2:Understood, I will continue the computation and remember if a rewrite or removal was performed in the previous step.
+
+pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:L, 1:J, 2:J, 3:K, 4:K, 5:J, 6:K, 7:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=7 Reached end of the step = (i >= max_i) = (3 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule  
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:L, 1:J, 2:J, 3:K, 4:J, 5:K, 6:K, 7:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=7 Reached end of the step = (i >= max_i) = (5 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 4: [0:L, 1:J, 2:J, 3:K, 4:J, 5:K, 6:K, 7:H]
+  pos (0, 1): «0:L, 1:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (1, 2): «1:J, 2:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (2, 3): «2:J, 3:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:L, 1:J, 2:J, 3:J, 4:K, 5:K, 6:K, 7:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=7 Reached end of the step = (i >= max_i) = (4 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking  
+Step 5: [0:L, 1:J, 2:J, 3:J, 4:K, 5:K, 6:K, 7:H]
+  pos (0, 1): «0:L, 1:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (1, 2): «1:J, 2:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (2, 3): «2:J, 3:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (3, 4): «3:J, 4:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:L, 1:J, 2:J, 3:J, 4:K, 5:K, 6:K, 7:H]
+
+P3. Translating from the internal format to original format, step by step:  
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#  
+  - J -> #A
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - L -> #B
+  - J -> #A
+  - J -> #A  
+  - J -> #A
+  - K -> B#
+  - K -> B#
+  - K -> B#
+  - H -> A#
+Final result in the original format: #B #A #A #A B# B# B# A#
+
+<solution>#B #A #A #A B# B# B# A#</solution>
+
+AI-Solution: #B #A #A #A B# B# B# A# 
+
+<<correct>>
+
+## Instance 7:
+Term: B# B# B# #A #A #A B# #A B# B# A# #A 
+Norm: #A #A #A #A B# B# B# B# B# B# 
+Rwts: 14
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>B# B# B# #A #A #A B# #A B# B# A# #A </problem>
+
+P1. Translating to the internal format, step by step:
+  - B# -> K
+  - B# -> K 
+  - B# -> K
+  - #A -> J
+  - #A -> J
+  - #A -> J
+  - B# -> K
+  - #A -> J
+  - B# -> K
+  - B# -> K
+  - A# -> H
+  - #A -> J
+
+P2: Compute the program
+Initial program in the internal format: [0:K, 1:K, 2:K, 3:J, 4:J, 5:J, 6:K, 7:J, 8:K, 9:K, 10:H, 11:J]
+
+Step 1: [0:K, 1:K, 2:K, 3:J, 4:J, 5:J, 6:K, 7:J, 8:K, 9:K, 10:H, 11:J]
+  pos (0, 1): «0:K, 1:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:K, 1:K, 2:J, 3:K, 4:J, 5:J, 6:K, 7:J, 8:K, 9:K, 10:H, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=11 Reached end of the step = (i >= max_i) = (3 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:K, 1:K, 2:J, 3:J, 4:K, 5:J, 6:K, 7:J, 8:K, 9:K, 10:H, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=11 Reached end of the step = (i >= max_i) = (4 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:K, 1:K, 2:J, 3:J, 4:J, 5:K, 6:K, 7:J, 8:K, 9:K, 10:H, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=11 Reached end of the step = (i >= max_i) = (5 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «6:K, 7:J» to «6:J, 7:K». Old index = old_i = 6
+    After rewrite: [0:K, 1:K, 2:J, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K, 10:H, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=11 Reached end of the step = (i >= max_i) = (7 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (9, 10): «9:K, 10:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (10, 11): «10:H, 11:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «10:H, 11:J». Old index = old_i = 10
+    Before removing: [0:K, 1:K, 2:J, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K, 10:H, 11:J]
+    Labelling the TWO elements «10:H, 11:J» to be removed: [0:K, 1:K, 2:J, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K, 10:removed, 11:removed]
+    After removing the labelled TWO elements «10:H, 11:J» to be removed, without renumbering: [0:K, 1:K, 2:J, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K]
+    Renumbering: [0:K, 1:K, 2:J, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=10+0=10. max_i:=9 Reached end of the step = (i >= max_i) = (10 >= 9) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+
+Step 2: [0:K, 1:K, 2:J, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K]
+  pos (0, 1): «0:K, 1:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «1:K, 2:J» to «1:J, 2:K». Old index = old_i = 1
+    After rewrite: [0:K, 1:J, 2:K, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:K, 1:J, 2:J, 3:K, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:K, 1:J, 2:J, 3:J, 4:K, 5:K, 6:J, 7:K, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:K, 1:J, 2:J, 3:J, 4:K, 5:J, 6:K, 7:K, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+
+Step 3: [0:K, 1:J, 2:J, 3:J, 4:K, 5:J, 6:K, 7:K, 8:K, 9:K]
+  pos (0, 1): «0:K, 1:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «0:K, 1:J» to «0:J, 1:K». Old index = old_i = 0
+    After rewrite: [0:J, 1:K, 2:J, 3:J, Got it, I will remember if a rewrite or removal was performed in the previous step. Let me continue from where I left off:
+
+After rewrite: [0:J, 1:K, 2:J, 3:J, 4:K, 5:J, 6:K, 7:K, 8:K, 9:K]. Using this as the new input  
+rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+Performed a rewrite or removal IN THIS STEP!!!
+
+pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+Rewrite the pair «1:K, 2:J» to «1:J, 2:K». Old index = old_i = 1
+After rewrite: [0:J, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 7:K, 8:K, 9:K]. Using this as the new input
+rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair  
+Performed a rewrite or removal IN THIS STEP!!!
+
+pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2  
+After rewrite: [0:J, 1:J, 2:J, 3:K, 4:K, 5:J, 6:K, 7:K, 8:K, 9:K]. Using this as the new input
+rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+Performed a rewrite or removal IN THIS STEP!!!
+
+pos (3, 4): «3:K, 4:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule  
+
+pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+After rewrite: [0:J, 1:J, 2:J, 3:K, 4:J, 5:K, 6:K, 7:K, 8:K, 9:K]. Using this as the new input
+rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+Performed a rewrite or removal IN THIS STEP!!!
+
+pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+
+Step 4: [0:J, 1:J, 2:J, 3:K, 4:J, 5:K, 6:K, 7:K, 8:K, 9:K]
+pos (0, 1): «0:J, 1:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+
+pos (1, 2): «1:J, 2:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule  
+
+pos (2, 3): «2:J, 3:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+
+pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+After rewrite: [0:J, 1:J, 2:J, 3:J, 4:K, 5:K, 6:K, 7:K, 8:K, 9:K]. Using this as the new input
+rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+Performed a rewrite or removal IN THIS STEP!!!
+
+pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule  
+
+pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking  
+
+Step 5: [0:J, 1:J, 2:J, 3:J, 4:K, 5:K, 6:K, 7:K, 8:K, 9:K]
+pos (0, 1): «0:J, 1:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+
+pos (1, 2): «1:J, 2:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+
+pos (2, 3): «2:J, 3:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+
+pos (3, 4): «3:J, 4:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule  
+
+pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule  
+
+pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+
+pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule  
+
+In this step, we did not perform any rewrite or removal, thus stopping
+
+Final result in the internal format: [0:J, 1:J, 2:J, 3:J, 4:K, 5:K, 6:K, 7:K, 8:K, 9:K]
+
+P3.1. As a reminder, list the translation rules from internal to original:
+- H -> A#  
+- J -> #A
+- K -> B#
+- L -> #B
+
+P3.2. Translate the program back to the original format:
+- J -> #A
+- J -> #A  
+- J -> #A
+- J -> #A
+- K -> B#
+- K -> B#
+- K -> B# 
+- K -> B#
+- K -> B#
+- K -> B#
+
+Final result in the original format: #A #A #A #A B# B# B# B# B# B#
+
+<solution>#A #A #A #A B# B# B# B# B# B#</solution>
+
+AI-Solution: #A #A #A #A B# B# B# B# B# B# 
+
+<<correct>>
+
+## Instance 8:
+Term: B# B# #A A# A# #B A# #B B# #B #B #B 
+Norm: #A #B #B A# A# A# 
+Rwts: 16
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>B# B# #A A# A# #B A# #B B# #B #B #B</problem>
+
+P1. Translating to the internal format, step by step:
+  - B# -> K
+  - B# -> K
+  - #A -> J
+  - A# -> H
+  - A# -> H
+  - #B -> L
+  - A# -> H
+  - #B -> L
+  - B# -> K
+  - #B -> L
+  - #B -> L
+  - #B -> L
+
+P2: Compute the program
+Initial program in the internal format: [0:K, 1:K, 2:J, 3:H, 4:H, 5:L, 6:H, 7:L, 8:K, 9:L, 10:L, 11:L]
+  pos (0, 1): «0:K, 1:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «1:K, 2:J» to «1:J, 2:K». Old index = old_i = 1
+    After rewrite: [0:K, 1:J, 2:K, 3:H, 4:H, 5:L, 6:H, 7:L, 8:K, 9:L, 10:L, 11:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=11 Reached end of the step = (i >= max_i) = (2 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:K, 3:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «4:H, 5:L» to «4:L, 5:H». Old index = old_i = 4
+    After rewrite: [0:K, 1:J, 2:K, 3:H, 4:L, 5:H, 6:H, 7:L, 8:K, 9:L, 10:L, 11:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=11 Reached end of the step = (i >= max_i) = (5 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:K, 1:J, 2:K, 3:H, 4:L, 5:H, 6:L, 7:H, 8:K, 9:L, 10:L, 11:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=11 Reached end of the step = (i >= max_i) = (7 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «8:K, 9:L». Old index = old_i = 8 
+    Before removing: [0:K, 1:J, 2:K, 3:H, 4:L, 5:H, 6:L, 7:H, 8:K, 9:L, 10:L, 11:L]
+    Labelling the TWO elements «8:K, 9:L» to be removed: [0:K, 1:J, 2:K, 3:H, 4:L, 5:H, 6:L, 7:H, 8:removed, 9:removed, 10:L, 11:L]
+    After removing the labelled TWO elements «8:K, 9:L» to be removed, without renumbering: [0:K, 1:J, 2:K, 3:H, 4:L, 5:H, 6:L, 7:H, 10:L, 11:L]
+    Renumbering: [0:K, 1:J, 2:K, 3:H, 4:L, 5:H, 6:L, 7:H, 8:L, 9:L]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=8+0=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:L, 9:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 1: [0:K, 1:J, 2:K, 3:H, 4:L, 5:H, 6:L, 7:H, 8:L, 9:L]
+  pos (0, 1): «0:K, 1:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «0:K, 1:J» to «0:J, 1:K». Old index = old_i = 0
+    After rewrite: [0:J, 1:K, 2:K, 3:H, 4:L, 5:H, 6:L, 7:H, 8:L, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:H». Checking whether «KH» is among the four rules: «HJ» == «KH»? No. «HL» == «KH»? No. «KJ» == «KH»? No. «KL» == «KH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «3:H, 4:L» to «3:L, 4:H». Old index = old_i = 3
+    After rewrite: [0:J, 1:K, 2:K, 3:L, 4:H, 5:H, 6:L, 7:H, 8:L, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:J, 1:K, 2:K, 3:L, 4:H, 5:L, 6:H, 7:H, 8:L, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «7:H, 8:L» to «7:L, 8:H». Old index = old_i = 7
+    After rewrite: [0:J, 1:K, 2:K, 3:L, 4:H, 5:L, 6:H, 7:L, 8:H, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:H, 9:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «8:H, 9:L» to «8:L, 9:H». Old index = old_i = 8
+    After rewrite: [0:J, 1:K, 2:K, 3:L, 4:H, 5:L, 6:H, 7:L, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=8+1=9. max_i:=9 Reached end of the step = (i >= max_i) = (9 >= 9) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:J, 1:K, 2:K, 3:L, 4:H, 5:L, 6:H, 7:L, 8:L, 9:H]
+  pos (0, 1): «0:J, 1:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «2:K, 3:L». Old index = old_i = 2 
+    Before removing: [0:J, 1:K, 2:K, 3:L, 4Got it, I will remember if a rewrite or removal was performed in the previous step if it gets cut off in the middle. Let me continue from where I left off:
+
+:H, 5:L, 6:H, 7:L, 8:L, 9:H]
+    Labelling the TWO elements «2:K, 3:L» to be removed: [0:J, 1:K, 2:removed, 3:removed, 4:H, 5:L, 6:H, 7:L, 8:L, 9:H]
+    After removing the labelled TWO elements «2:K, 3:L» to be removed, without renumbering: [0:J, 1:K, 4:H, 5:L, 6:H, 7:L, 8:L, 9:H]
+    Renumbering: [0:J, 1:K, 2:H, 3:L, 4:H, 5:L, 6:L, 7:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=2+0=2. max_i:=7 Reached end of the step = (i >= max_i) = (2 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «2:H, 3:L» to «2:L, 3:H». Old index = old_i = 2
+    After rewrite: [0:J, 1:K, 2:L, 3:H, 4:H, 5:L, 6:L, 7:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=7 Reached end of the step = (i >= max_i) = (3 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «4:H, 5:L» to «4:L, 5:H». Old index = old_i = 4
+    After rewrite: [0:J, 1:K, 2:L, 3:H, 4:L, 5:H, 6:L, 7:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=7 Reached end of the step = (i >= max_i) = (5 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:J, 1:K, 2:L, 3:H, 4:L, 5:L, 6:H, 7:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=7 Reached end of the step = (i >= max_i) = (6 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:J, 1:K, 2:L, 3:H, 4:L, 5:L, 6:H, 7:H]
+  pos (0, 1): «0:J, 1:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «1:K, 2:L». Old index = old_i = 1 
+    Before removing: [0:J, 1:K, 2:L, 3:H, 4:L, 5:L, 6:H, 7:H]
+    Labelling the TWO elements «1:K, 2:L» to be removed: [0:J, 1:removed, 2:removed, 3:H, 4:L, 5:L, 6:H, 7:H]
+    After removing the labelled TWO elements «1:K, 2:L» to be removed, without renumbering: [0:J, 3:H, 4:L, 5:L, 6:H, 7:H]
+    Renumbering: [0:J, 1:H, 2:L, 3:L, 4:H, 5:H]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=1+0=1. max_i:=5 Reached end of the step = (i >= max_i) = (1 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:H, 2:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «1:H, 2:L» to «1:L, 2:H». Old index = old_i = 1
+    After rewrite: [0:J, 1:L, 2:H, 3:L, 4:H, 5:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=5 Reached end of the step = (i >= max_i) = (2 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «2:H, 3:L» to «2:L, 3:H». Old index = old_i = 2
+    After rewrite: [0:J, 1:L, 2:L, 3:H, 4:H, 5:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=5 Reached end of the step = (i >= max_i) = (3 >= 5) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 4: [0:J, 1:L, 2:L, 3:H, 4:H, 5:H]
+  pos (0, 1): «0:J, 1:L». Checking whether «JL» is among the four rules: «HJ» == «JL»? No. «HL» == «JL»? No. «KJ» == «JL»? No. «KL» == «JL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (2, 3): «2:L, 3:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:J, 1:L, 2:L, 3:H, 4:H, 5:H]
+
+P3. Translating from the internal format to original format, step by step:
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A
+  - K -> B#  
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - J -> #A
+  - L -> #B
+  - L -> #B
+  - H -> A#
+  - H -> A#
+  - H -> A#
+Final result in the original format: #A #B #B A# A# A#
+
+<solution>#A #B #B A# A# A#</solution>
+
+AI-Solution: #A #B #B A# A# A# 
+
+<<correct>>
+
+## Instance 9:
+Term: A# A# #B #A B# B# #A B# #A #A #A #A 
+Norm: #B #A #A #A #A B# B# B# 
+Rwts: 18
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>A# A# #B #A B# B# #A B# #A #A #A #A </problem>
+
+P1. Translating to the internal format, step by step:
+  - A# -> H
+  - A# -> H
+  - #B -> L
+  - #A -> J
+  - B# -> K
+  - B# -> K
+  - #A -> J
+  - B# -> K
+  - #A -> J
+  - #A -> J
+  - #A -> J
+  - #A -> J
+
+P2: Compute the program
+Initial program in the internal format: [0:H, 1:H, 2:L, 3:J, 4:K, 5:K, 6:J, 7:K, 8:J, 9:J, 10:J, 11:J]
+  pos (0, 1): «0:H, 1:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «1:H, 2:L» to «1:L, 2:H». Old index = old_i = 1
+    After rewrite: [0:H, 1:L, 2:H, 3:J, 4:K, 5:K, 6:J, 7:K, 8:J, 9:J, 10:J, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=11 Reached end of the step = (i >= max_i) = (2 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «2:H, 3:J». Old index = old_i = 2 
+    Before removing: [0:H, 1:L, 2:H, 3:J, 4:K, 5:K, 6:J, 7:K, 8:J, 9:J, 10:J, 11:J]
+    Labelling the TWO elements «2:H, 3:J» to be removed: [0:H, 1:L, 2:removed, 3:removed, 4:K, 5:K, 6:J, 7:K, 8:J, 9:J, 10:J, 11:J]
+    After removing the labelled TWO elements «2:H, 3:J» to be removed, without renumbering: [0:H, 1:L, 4:K, 5:K, 6:J, 7:K, 8:J, 9:J, 10:J, 11:J]
+    Renumbering: [0:H, 1:L, 2:K, 3:K, 4:J, 5:K, 6:J, 7:J, 8:J, 9:J]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=2+0=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:K, 3:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:H, 1:L, 2:K, 3:J, 4:K, 5:K, 6:J, 7:J, 8:J, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:H, 1:L, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 8:J, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «6:K, 7:J» to «6:J, 7:K». Old index = old_i = 6
+    After rewrite: [0:H, 1:L, 2:K, 3:J, 4:K, 5:J, 6:J, 7:K, 8:J, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:K, 8:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «7:K, 8:J» to «7:J, 8:K». Old index = old_i = 7
+    After rewrite: [0:H, 1:L, 2:K, 3:J, 4:K, 5:J, 6:J, 7:J, 8:K, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:K, 9:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «8:K, 9:J» to «8:J, 9:K». Old index = old_i = 8
+    After rewrite: [0:H, 1:L, 2:K, 3:J, 4:K, 5:J, 6:J, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=8+1=9. max_i:=9 Reached end of the step = (i >= max_i) = (9 >= 9) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 1: [0:H, 1:L, 2:K, 3:J, 4:K, 5:J, 6:J, 7:J, 8:J, 9:K]
+  pos (0, 1): «0:H, 1:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «0:H, 1:L» to «0:L, 1:H». Old index = old_i = 0
+    After rewrite: [0:L, 1:H, 2:K, 3:J, 4:K, 5:J, 6:J, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=9 Reached end of the step = (i >= max_i) = (1 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:H, 2:K». Checking whether «HK» is among the four rules: «HJ» == «HK»? No. «HL» == «HK»? No. «KJ» == «HK»? No. «KL» == «HK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:L, 1:H, 2:J, 3:K, 4:K, 5:J, 6:J, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:L, 1:H, 2:J, 3:K, 4:J, 5:K, 6:J, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:L, 1:H, 2:J, 3:K, 4:J, 5:J, 6:K, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «6:K, 7:J» to «6:J, 7:K». Old index = old_i = 6
+    After rewrite: [0:L, 1:H, 2:J, 3:K, 4:J, 5:J, 6:J, 7:K, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:K, 8:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» ==Understood, I will continue the computation and keep track of whether a rewrite or removal was performed in the previous step.
+
+Continuing from the previous step:
+
+  pos (7, 8): «7:K, 8:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «7:K, 8:J» to «7:J, 8:K». Old index = old_i = 7
+    After rewrite: [0:L, 1:H, 2:J, 3:K, 4:J, 5:J, 6:J, 7:J, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:L, 1:H, 2:J, 3:K, 4:J, 5:J, 6:J, 7:J, 8:K, 9:K]
+  pos (0, 1): «0:L, 1:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «1:H, 2:J». Old index = old_i = 1 
+    Before removing: [0:L, 1:H, 2:J, 3:K, 4:J, 5:J, 6:J, 7:J, 8:K, 9:K]
+    Labelling the TWO elements «1:H, 2:J» to be removed: [0:L, 1:removed, 2:removed, 3:K, 4:J, 5:J, 6:J, 7:J, 8:K, 9:K]
+    After removing the labelled TWO elements «1:H, 2:J» to be removed, without renumbering: [0:L, 3:K, 4:J, 5:J, 6:J, 7:J, 8:K, 9:K]
+    Renumbering: [0:L, 1:K, 2:J, 3:J, 4:J, 5:J, 6:K, 7:K]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=1+0=1. max_i:=7 Reached end of the step = (i >= max_i) = (1 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «1:K, 2:J» to «1:J, 2:K». Old index = old_i = 1
+    After rewrite: [0:L, 1:J, 2:K, 3:J, 4:J, 5:J, 6:K, 7:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=7 Reached end of the step = (i >= max_i) = (2 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:L, 1:J, 2:J, 3:K, 4:J, 5:J, 6:K, 7:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=7 Reached end of the step = (i >= max_i) = (3 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:L, 1:J, 2:J, 3:J, 4:K, 5:J, 6:K, 7:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=7 Reached end of the step = (i >= max_i) = (4 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:L, 1:J, 2:J, 3:J, 4:J, 5:K, 6:K, 7:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=7 Reached end of the step = (i >= max_i) = (5 >= 7) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:L, 1:J, 2:J, 3:J, 4:J, 5:K, 6:K, 7:K]
+  pos (0, 1): «0:L, 1:J». Checking whether «LJ» is among the four rules: «HJ» == «LJ»? No. «HL» == «LJ»? No. «KJ» == «LJ»? No. «KL» == «LJ»? No. Did not find a matching rule
+  pos (1, 2): «1:J, 2:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (2, 3): «2:J, 3:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (3, 4): «3:J, 4:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (4, 5): «4:J, 5:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:L, 1:J, 2:J, 3:J, 4:J, 5:K, 6:K, 7:K]
+
+P3. Translating from the internal format to original format, step by step:
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - L -> #B
+  - J -> #A
+  - J -> #A  
+  - J -> #A
+  - J -> #A
+  - K -> B#
+  - K -> B#
+  - K -> B#
+Final result in the original format: #B #A #A #A #A B# B# B#
+
+<solution>#B #A #A #A #A B# B# B#</solution>
+
+AI-Solution: #B #A #A #A #A B# B# B# 
+
+<<correct>>
+
+## Instance 10:
+Term: A# #B A# A# #B A# A# A# #A #B #B #B 
+Norm: #B #B #B #B #B A# A# A# A# A# 
+Rwts: 20
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>A# #B A# A# #B A# A# A# #A #B #B #B </problem>
+
+P1. Translating to the internal format, step by step:
+  - A# -> H
+  - #B -> L
+  - A# -> H
+  - A# -> H
+  - #B -> L
+  - A# -> H
+  - A# -> H
+  - A# -> H
+  - #A -> J
+  - #B -> L
+  - #B -> L
+  - #B -> L
+
+Initial program in the internal format: [0:H, 1:L, 2:H, 3:H, 4:L, 5:H, 6:H, 7:H, 8:J, 9:L, 10:L, 11:L]
+
+P2: Compute the program
+Step 1: [0:H, 1:L, 2:H, 3:H, 4:L, 5:H, 6:H, 7:H, 8:J, 9:L, 10:L, 11:L]
+  pos (0, 1): «0:H, 1:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «0:H, 1:L» to «0:L, 1:H». Old index = old_i = 0
+    After rewrite: [0:L, 1:H, 2:H, 3:H, 4:L, 5:H, 6:H, 7:H, 8:J, 9:L, 10:L, 11:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=11 Reached end of the step = (i >= max_i) = (1 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «3:H, 4:L» to «3:L, 4:H». Old index = old_i = 3
+    After rewrite: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:H, 8:J, 9:L, 10:L, 11:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=11 Reached end of the step = (i >= max_i) = (4 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:J». Checking whether «HJ» is among the four rules: «HJ» == «HJ»? Yes. «HL» == «HJ»? No. «KJ» == «HJ»? No. «KL» == «HJ»? No. Found a matching rule
+    Removing the pair «7:H, 8:J». Old index = old_i = 7
+    Before removing: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:H, 8:J, 9:L, 10:L, 11:L]
+    Labelling the TWO elements «7:H, 8:J» to be removed: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:removed, 8:removed, 9:L, 10:L, 11:L]
+    After removing the labelled TWO elements «7:H, 8:J» to be removed, without renumbering: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 9:L, 10:L, 11:L]
+    Renumbering: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:L, 8:L, 9:L]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=7+0=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:L, 8:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (8, 9): «8:L, 9:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:L, 1:H, 2:H, 3:L, 4:H, 5:H, 6:H, 7:L, 8:L, 9:L]
+  pos (0, 1): «0:L, 1:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «2:H, 3:L» to «2:L, 3:H». Old index = old_i = 2
+    After rewrite: [0:L, 1:H, 2:L, 3:H, 4:H, 5:H, 6:H, 7:L, 8:L, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:L, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:H, 8:L, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «7:H, 8:L» to «7:L, 8:H». Old index = old_i = 7
+    After rewrite: [0:L, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:L, 8:H, 9:L]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:H, 9:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «8:H, 9:L» to «8:L, 9:H». Old index = old_i = 8
+    After rewrite: [0:L, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:L, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=8+1=9. max_i:=9 Reached end of the step = (i >= max_i) = (9 >= 9) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:L, 1:H, 2:L, 3:H, 4:H, 5:H, 6:L, 7:L, 8:L, 9:H]
+  pos (0, 1): «0:L, 1:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (1, 2): «1:H, 2:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «1:H, 2:L» to «1:L, 2:H». Old index = old_i = 1
+    After rewrite: [0:L, 1:L, 2:H, 3:H, 4:H, 5:H, 6:L, 7:L, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did notGot it, I will remember if a rewrite or removal was performed in the previous step if it gets cut off in the middle.
+
+Continuing from where we left off:
+
+find a matching rule
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:L, 1:L, 2:H, 3:H, 4:H, 5:L, 6:H, 7:L, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:L, 1:L, 2:H, 3:H, 4:H, 5:L, 6:L, 7:H, 8:L, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «7:H, 8:L» to «7:L, 8:H». Old index = old_i = 7
+    After rewrite: [0:L, 1:L, 2:H, 3:H, 4:H, 5:L, 6:L, 7:L, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:H, 9:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 4: [0:L, 1:L, 2:H, 3:H, 4:H, 5:L, 6:L, 7:L, 8:H, 9:H]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule  
+  pos (3, 4): «3:H, 4:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (4, 5): «4:H, 5:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «4:H, 5:L» to «4:L, 5:H». Old index = old_i = 4
+    After rewrite: [0:L, 1:L, 2:H, 3:H, 4:L, 5:H, 6:L, 7:L, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:L, 1:L, 2:H, 3:H, 4:L, 5:L, 6:H, 7:L, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «6:H, 7:L» to «6:L, 7:H». Old index = old_i = 6
+    After rewrite: [0:L, 1:L, 2:H, 3:H, 4:L, 5:L, 6:L, 7:H, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:H, 8:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking 
+Step 5: [0:L, 1:L, 2:H, 3:H, 4:L, 5:L, 6:L, 7:H, 8:H, 9:H]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (3, 4): «3:H, 4:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «3:H, 4:L» to «3:L, 4:H». Old index = old_i = 3
+    After rewrite: [0:L, 1:L, 2:H, 3:L, 4:H, 5:L, 6:L, 7:H, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «4:H, 5:L» to «4:L, 5:H». Old index = old_i = 4
+    After rewrite: [0:L, 1:L, 2:H, 3:L, 4:L, 5:H, 6:L, 7:H, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:H, 6:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «5:H, 6:L» to «5:L, 6:H». Old index = old_i = 5
+    After rewrite: [0:L, 1:L, 2:H, 3:L, 4:L, 5:L, 6:H, 7:H, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 6: [0:L, 1:L, 2:H, 3:L, 4:L, 5:L, 6:H, 7:H, 8:H, 9:H]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (2, 3): «2:H, 3:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «2:H, 3:L» to «2:L, 3:H». Old index = old_i = 2
+    After rewrite: [0:L, 1:L, 2:L, 3:H, 4:L, 5:L, 6:H, 7:H, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >=Got it, I will remember if a rewrite or removal was performed in the previous step if it gets cut off in the middle.
+
+Continuing from where we left off:
+
+9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:H, 4:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «3:H, 4:L» to «3:L, 4:H». Old index = old_i = 3
+    After rewrite: [0:L, 1:L, 2:L, 3:L, 4:H, 5:L, 6:H, 7:H, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:H, 5:L». Checking whether «HL» is among the four rules: «HJ» == «HL»? No. «HL» == «HL»? Yes. «KJ» == «HL»? No. «KL» == «HL»? No. Found a matching rule
+    Rewrite the pair «4:H, 5:L» to «4:L, 5:H». Old index = old_i = 4
+    After rewrite: [0:L, 1:L, 2:L, 3:L, 4:L, 5:H, 6:H, 7:H, 8:H, 9:H]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 7: [0:L, 1:L, 2:L, 3:L, 4:L, 5:H, 6:H, 7:H, 8:H, 9:H]
+  pos (0, 1): «0:L, 1:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (1, 2): «1:L, 2:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (2, 3): «2:L, 3:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (3, 4): «3:L, 4:L». Checking whether «LL» is among the four rules: «HJ» == «LL»? No. «HL» == «LL»? No. «KJ» == «LL»? No. «KL» == «LL»? No. Did not find a matching rule
+  pos (4, 5): «4:L, 5:H». Checking whether «LH» is among the four rules: «HJ» == «LH»? No. «HL» == «LH»? No. «KJ» == «LH»? No. «KL» == «LH»? No. Did not find a matching rule
+  pos (5, 6): «5:H, 6:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (6, 7): «6:H, 7:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (7, 8): «7:H, 8:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+  pos (8, 9): «8:H, 9:H». Checking whether «HH» is among the four rules: «HJ» == «HH»? No. «HL» == «HH»? No. «KJ» == «HH»? No. «KL» == «HH»? No. Did not find a matching rule
+
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:L, 1:L, 2:L, 3:L, 4:L, 5:H, 6:H, 7:H, 8:H, 9:H]
+
+P3. Translating from the internal format to original format, step by step:  
+P3.1. As a reminder, list the translation rules from internal to original:
+  - H -> A#
+  - J -> #A  
+  - K -> B#
+  - L -> #B
+
+P3.2. Translate the program back to the original format:
+  - L -> #B
+  - L -> #B
+  - L -> #B 
+  - L -> #B
+  - L -> #B
+  - H -> A#
+  - H -> A#
+  - H -> A#
+  - H -> A#
+  - H -> A#
+
+Final result in the original format: #B #B #B #B #B A# A# A# A# A#
+
+<solution>#B #B #B #B #B A# A# A# A# A#</solution>
+
+AI-Solution: #B #B #B #B #B A# A# A# A# A# 
+
+<<correct>>
+
+## Instance 11:
+Term: B# #A B# B# #A B# #A B# #A #B #A #A 
+Norm: #A #A #A #A #A #A B# B# B# B# 
+Rwts: 22
+AI-RESPONSE:
+Here is the step-by-step computation of the given program:
+
+<problem>B# #A B# B# #A B# #A B# #A #B #A #A </problem>
+
+P1. Translating to the internal format, step by step:
+  - B# -> K
+  - #A -> J
+  - B# -> K
+  - B# -> K
+  - #A -> J
+  - B# -> K
+  - #A -> J
+  - B# -> K
+  - #A -> J
+  - #B -> L
+  - #A -> J
+  - #A -> J
+
+P2: Compute the program
+Initial program in the internal format: [0:K, 1:J, 2:K, 3:K, 4:J, 5:K, 6:J, 7:K, 8:J, 9:L, 10:J, 11:J]
+  pos (0, 1): «0:K, 1:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «0:K, 1:J» to «0:J, 1:K». Old index = old_i = 0
+    After rewrite: [0:J, 1:K, 2:K, 3:K, 4:J, 5:K, 6:J, 7:K, 8:J, 9:L, 10:J, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=0+1=1. max_i:=11 Reached end of the step = (i >= max_i) = (1 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:J, 1:K, 2:K, 3:J, 4:K, 5:K, 6:J, 7:K, 8:J, 9:L, 10:J, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=11 Reached end of the step = (i >= max_i) = (4 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:J, 1:K, 2:K, 3:J, 4:K, 5:J, 6:K, 7:K, 8:J, 9:L, 10:J, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=11 Reached end of the step = (i >= max_i) = (6 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (7, 8): «7:K, 8:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «7:K, 8:J» to «7:J, 8:K». Old index = old_i = 7
+    After rewrite: [0:J, 1:K, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 8:K, 9:L, 10:J, 11:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=11 Reached end of the step = (i >= max_i) = (8 >= 11) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:K, 9:L». Checking whether «KL» is among the four rules: «HJ» == «KL»? No. «HL» == «KL»? No. «KJ» == «KL»? No. «KL» == «KL»? Yes. Found a matching rule
+    Removing the pair «8:K, 9:L». Old index = old_i = 8 
+    Before removing: [0:J, 1:K, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 8:K, 9:L, 10:J, 11:J]
+    Labelling the TWO elements «8:K, 9:L» to be removed: [0:J, 1:K, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 8:removed, 9:removed, 10:J, 11:J]
+    After removing the labelled TWO elements «8:K, 9:L» to be removed, without renumbering: [0:J, 1:K, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 10:J, 11:J]
+    Renumbering: [0:J, 1:K, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 8:J, 9:J]. USING THIS AS THE NEW PROGRAM
+    rule is empty, i:=old_i+0=8+0=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:J, 9:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 1: [0:J, 1:K, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 8:J, 9:J]
+  pos (0, 1): «0:J, 1:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:J, 1:K, 2:J, 3:K, 4:K, 5:J, 6:K, 7:J, 8:J, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:J, 1:K, 2:J, 3:K, 4:J, 5:K, 6:K, 7:J, 8:J, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (6, 7): «6:K, 7:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «6:K, 7:J» to «6:J, 7:K». Old index = old_i = 6
+    After rewrite: [0:J, 1:K, 2:J, 3:K, 4:J, 5:K, 6:J, 7:K, 8:J, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:K, 8:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «7:K, 8:J» to «7:J, 8:K». Old index = old_i = 7
+    After rewrite: [0:J, 1:K, 2:J, 3:K, 4:J, 5:K, 6:J, 7:J, 8:K, 9:J]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:K, 9:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «8:K, 9:J» to «8:J, 9:K». Old index = old_i = 8
+    After rewrite: [0:J, 1:K, 2:J, 3:K, 4:J, 5:K, 6:J, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=8+1=9. max_i:=9 Reached end of the step = (i >= max_i) = (9 >= 9) = True. Proceed to next step
+    Performed a rewrite or removal IN THIS STEP!!!
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 2: [0:J, 1:K, 2:J, 3:K, 4:J, 5:K, 6:J, 7:J, 8:J, 9:K]
+  pos (0, 1): «0:J, 1:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»?Got it, I will remember if a rewrite or removal was performed in the previous step. Continuing from where I left off:
+
+  pos (1, 2): «1:K, 2:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «1:K, 2:J» to «1:J, 2:K». Old index = old_i = 1
+    After rewrite: [0:J, 1:J, 2:K, 3:K, 4:J, 5:K, 6:J, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=1+1=2. max_i:=9 Reached end of the step = (i >= max_i) = (2 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (2, 3): «2:K, 3:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:J, 1:J, 2:K, 3:J, 4:K, 5:K, 6:J, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:J, 1:J, 2:K, 3:J, 4:K, 5:J, 6:K, 7:J, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «6:K, 7:J» to «6:J, 7:K». Old index = old_i = 6
+    After rewrite: [0:J, 1:J, 2:K, 3:J, 4:K, 5:J, 6:J, 7:K, 8:J, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:K, 8:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «7:K, 8:J» to «7:J, 8:K». Old index = old_i = 7
+    After rewrite: [0:J, 1:J, 2:K, 3:J, 4:K, 5:J, 6:J, 7:J, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=7+1=8. max_i:=9 Reached end of the step = (i >= max_i) = (8 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 3: [0:J, 1:J, 2:K, 3:J, 4:K, 5:J, 6:J, 7:J, 8:K, 9:K]
+  pos (0, 1): «0:J, 1:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (1, 2): «1:J, 2:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (2, 3): «2:K, 3:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «2:K, 3:J» to «2:J, 3:K». Old index = old_i = 2
+    After rewrite: [0:J, 1:J, 2:J, 3:K, 4:K, 5:J, 6:J, 7:J, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=2+1=3. max_i:=9 Reached end of the step = (i >= max_i) = (3 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (3, 4): «3:K, 4:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:J, 1:J, 2:J, 3:K, 4:J, 5:K, 6:J, 7:J, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:J, 1:J, 2:J, 3:K, 4:J, 5:J, 6:K, 7:J, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (6, 7): «6:K, 7:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «6:K, 7:J» to «6:J, 7:K». Old index = old_i = 6
+    After rewrite: [0:J, 1:J, 2:J, 3:K, 4:J, 5:J, 6:J, 7:K, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=6+1=7. max_i:=9 Reached end of the step = (i >= max_i) = (7 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+  pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 4: [0:J, 1:J, 2:J, 3:K, 4:J, 5:J, 6:J, 7:K, 8:K, 9:K]
+  pos (0, 1): «0:J, 1:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (1, 2): «1:J, 2:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+  pos (2, 3): «2:J, 3:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+  pos (3, 4): «3:K, 4:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «3:K, 4:J» to «3:J, 4:K». Old index = old_i = 3
+    After rewrite: [0:J, 1:J, 2:J, 3:J, 4:K, 5:J, 6:J, 7:K, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=3+1=4. max_i:=9 Reached end of the step = (i >= max_i) = (4 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (4, 5): «4:K, 5:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «4:K, 5:J» to «4:J, 5:K». Old index = old_i = 4
+    After rewrite: [0:J, 1:J, 2:J, 3:J, 4:J, 5:K, 6:J, 7:K, 8:K, 9:K]. Using this as the new input
+    rule is not empty, i:=old_i+1=4+1=5. max_i:=9 Reached end of the step = (i >= max_i) = (5 >= 9) = False. Proceed to check next pair
+    Performed a rewrite or removal IN THIS STEP!!!
+  pos (5, 6): «5:K, 6:J». Checking whether «KJ» is among the four rules: «HJ» == «KJ»? No. «HL» == «KJ»? No. «KJ» == «KJ»? Yes. «KL» == «KJ»? No. Found a matching rule
+    Rewrite the pair «5:K, 6:J» to «5:J, 6:K». Old index = old_i = 5
+    After rewrite: [0:J, 1:J, 2:J, 3:J, 4:Got it, I will remember if a rewrite or removal was performed in the previous response. Continuing from where I left off:
+
+After rewrite: [0:J, 1:J, 2:J, 3:J, 4:J, 5:J, 6:K, 7:K, 8:K, 9:K]. Using this as the new input
+rule is not empty, i:=old_i+1=5+1=6. max_i:=9 Reached end of the step = (i >= max_i) = (6 >= 9) = False. Proceed to check next pair
+Performed a rewrite or removal IN THIS STEP!!!
+pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule  
+pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we performed rewrite or removal, thus starting next step of checking
+Step 5: [0:J, 1:J, 2:J, 3:J, 4:J, 5:J, 6:K, 7:K, 8:K, 9:K]
+pos (0, 1): «0:J, 1:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+pos (1, 2): «1:J, 2:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+pos (2, 3): «2:J, 3:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+pos (3, 4): «3:J, 4:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+pos (4, 5): «4:J, 5:J». Checking whether «JJ» is among the four rules: «HJ» == «JJ»? No. «HL» == «JJ»? No. «KJ» == «JJ»? No. «KL» == «JJ»? No. Did not find a matching rule
+pos (5, 6): «5:J, 6:K». Checking whether «JK» is among the four rules: «HJ» == «JK»? No. «HL» == «JK»? No. «KJ» == «JK»? No. «KL» == «JK»? No. Did not find a matching rule
+pos (6, 7): «6:K, 7:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+pos (7, 8): «7:K, 8:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+pos (8, 9): «8:K, 9:K». Checking whether «KK» is among the four rules: «HJ» == «KK»? No. «HL» == «KK»? No. «KJ» == «KK»? No. «KL» == «KK»? No. Did not find a matching rule
+In this step, we did not perform any rewrite or removal, thus stopping
+Final result in the internal format: [0:J, 1:J, 2:J, 3:J, 4:J, 5:J, 6:K, 7:K, 8:K, 9:K]
+
+P3. Translating from the internal format to original format, step by step:  
+P3.1. As a reminder, list the translation rules from internal to original:
+- H -> A#  
+- J -> #A
+- K -> B#
+- L -> #B
+
+P3.2. Translate the program back to the original format:
+- J -> #A
+- J -> #A  
+- J -> #A
+- J -> #A
+- J -> #A
+- J -> #A
+- K -> B#
+- K -> B# 
+- K -> B#
+- K -> B#
+Final result in the original format: #A #A #A #A #A #A B# B# B# B#
+
+<solution>#A #A #A #A #A #A B# B# B# B#</solution>
+
+AI-Solution: #A #A #A #A #A #A B# B# B# B# 
+
+<<correct>>
+
+
+Final score: 11 / 12
