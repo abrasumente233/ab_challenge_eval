@@ -65,7 +65,10 @@ async function askClaude({ system, messages, max_tokens, model = 'claude-3-opus-
 }
 
 async function askGPT({system, messages, model, temperature}) {
-  const openai = new OpenAI({apiKey: await getOpenAIKey()});
+  const openai = new OpenAI({
+    apiKey: await getOpenAIKey(),
+    baseURL: "https://openrouter.ai/api/v1"
+  });
   const stream = await openai.chat.completions.create({
     model: model || "gpt-4-0125-preview",
     messages: [
@@ -81,8 +84,29 @@ async function askGPT({system, messages, model, temperature}) {
     PUT(text);
     result += text;
   }
-  PUT("\n");
   return result;
+}
+
+async function askContinuation({ system, messages, model, temperature }) {
+  const max_rounds = 4; // 4 * 4096 = 16384 tokens. Limit is 32k.
+
+  var messages = [...messages];
+  var result = ""
+  for (let i = 0; i < max_rounds; i++) {
+    const response = await askGPT({ system, messages, model, temperature });
+    result += response;
+    const solutionRegex = /<solution>(.*?)<\/solution>/s;
+    const solutionMatch = result.match(solutionRegex);
+    if (solutionMatch) {
+      PUT("\n");
+      return result;
+    } else {
+      messages.push({ role: "assistant", content: response});
+      messages.push({ role: "user", content: "continue. If a step is cut off in the middle, REMEMBER that fact whether if you've performed a rewrite or removal in the last response"});
+    }
+  }
+
+  return "No solution found after " + max_rounds + " rounds";
 }
 
 // A::B System
@@ -1024,8 +1048,7 @@ async function runChallenge(system, model, level) {
 
   const problem = `<problem>${show(term)}</problem>`;
 
-  let ai_ask = model.startsWith("gpt") ? askGPT : askClaude;
-  let ai_ret = await ai_ask({ system, messages: [{ role: 'user', content: problem }], model, debug: true });
+  let ai_ret = await askContinuation({ system, messages: [{ role: 'user', content: problem }], model, debug: true });
 
   const solutionRegex = /<solution>(.*?)<\/solution>/s;
   const solutionMatch = ai_ret.match(solutionRegex);
